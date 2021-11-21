@@ -1,17 +1,17 @@
-`include "ALU_Control.sv"
+`include "Config.sv"
+`include "interface.sv"
 module ALU(
-    input wire [31:0] a, b,
-    input wire [3:0] control,
+    input wire unsigned [31:0] a, b,
+    ALU_Control_if control,
     output wire [31:0] out
     );
-assign out = (control == ADD) ? a + b :
-             (control == SUB) ? a - b :
-             (control == AND) ? a & b :
-             (control == OR) ? a | b :
-             (control == XOR) ? a ^ b :
-             (control == NOT) ? ~a :
-             (control == SLL) ? a << b :
-             (control == SRL) ? a >> b :
-             (control == SRA) ? $signed($signed(a) >>> b) :
-             (control == ROL) ? (a << b) | (a >> (32 - b)) : 0;
+assign out =
+    (control.ALU_option == ADD) ? a + (control.ctrl2 ? -b : b) :
+    (control.ALU_option == SLL) ? a << b :
+    (control.ALU_option == SLT) ? ($signed(a) < $signed(b) ? 1 : 0) :
+    (control.ALU_option == SLTU) ? (a < b ? 1 : 0) :
+    (control.ALU_option == XOR) ? a ^ b :
+    (control.ALU_option == SRL) ? (control.ctrl2 ? $signed($signed(a) >>> b) : (a >> b)) :
+    (control.ALU_option == OR) ? a | b :
+    (control.ALU_option == AND) ? a & b : 0;
 endmodule

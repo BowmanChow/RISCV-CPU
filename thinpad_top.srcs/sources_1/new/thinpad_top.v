@@ -103,27 +103,28 @@ always@(posedge clk_10M or negedge locked) begin
     if(~locked) reset_of_clk10M <= 1'b1;
     else        reset_of_clk10M <= 1'b0;
 end
-reg [31:0] a = 32'hfffffff0;
-reg [31:0] b = 3;
-reg [3:0] opcode = 6;
-wire [31:0] out;
-ALU alu(a, b, opcode, out);
+
+assign base_ram_ce_n = 1'b0;
+assign base_ram_data = 'bz;
+assign base_ram_be_n = 'b0;
+reg [19:0] PC = 0;
+assign base_ram_addr = PC;
+reg read = 0;
+assign base_ram_oe_n = read;
+reg write = 1;
+assign base_ram_we_n = write;
 always@(posedge clk_10M or posedge reset_of_clk10M) begin
     if(reset_of_clk10M)begin
         // Your Code
     end
     else begin
         // Your Code
-        a <= a + 1;
-        b <= b + 1;
-        opcode <= opcode + 1;
+        PC <= PC + 1;
+        read <= 0;
     end
 end
 
 // 不使用内存、串口时，禁用其使能信号
-assign base_ram_ce_n = 1'b1;
-assign base_ram_oe_n = 1'b1;
-assign base_ram_we_n = 1'b1;
 
 assign ext_ram_ce_n = 1'b1;
 assign ext_ram_oe_n = 1'b1;
