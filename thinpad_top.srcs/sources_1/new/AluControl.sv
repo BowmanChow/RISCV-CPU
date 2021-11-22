@@ -8,12 +8,12 @@ module AluControl(
     output wire a_select,
     output wire b_select
     );
-assign control.alu_option =
-    (inst_type == LOAD ||
-     inst_type == BRANCH ||
-     inst_type == STORE) ? ADD :
-    (inst_type == REG ||
-     inst_type == IMME) ? ALU_CONTROL_TYPE'(funct3[14:12]) : control.alu_option;
+always_comb
+    case (inst_type)
+        AUPIC, JAL, JALR, BRANCH, LOAD, STORE :
+            control.alu_option <= ADD;
+        REG, IMME : control.alu_option <= ALU_CONTROL_TYPE'(funct3[14:12]);
+    endcase
 assign control.ctrl2 = (inst_type == IMME && funct3[14] == 0) ? 0 : funct7[30];
 assign a_select = 
     (inst_type == AUPIC ||

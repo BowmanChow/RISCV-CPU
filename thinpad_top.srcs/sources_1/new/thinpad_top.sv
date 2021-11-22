@@ -118,13 +118,14 @@ assign base_ram_we_n = write;
 wire [31:0] instruction;
 assign instruction = base_ram_data;
 
+PC_CONTROL pc_control;
+wire [31:0] alu_out;
 always@(posedge clk_10M or posedge reset_of_clk10M) begin
     if(reset_of_clk10M)begin
         // Your Code
     end
     else begin
-        // Your Code
-        PC <= PC + 4;
+        PC <= (pc_control == PC_ALU) ? alu_out : PC + 4;
         read <= 0;
     end
 end
@@ -132,10 +133,22 @@ end
 InstructionType instruction_type(
     .opcode(instruction[6:0])
 );
+WriteBackControl write_back_ctrl(
+    .inst_type(instruction_type.type_)
+);
+ImmeGen imme_gen(
+    .inst(instruction[31:7]),
+    .inst_type(instruction_type.type_)
+);
 RegFile reg_file(
     .clk(clk_10M),
     .rst(reset_of_clk10M),
     .waddr(instruction[11:7]),
+    .wdata(
+        (write_back_ctrl.ctrl == WRITE_BACK_ALU) ? alu_out :
+        (write_back_ctrl.ctrl == WRITE_BACK_PC_4) ? PC + 4 :
+        (write_back_ctrl.ctrl == WRITE_BACK_IMME) ? imme_gen.imme : ext_ram_data
+    ),
     .raddr1(instruction[19:15]),
     .raddr2(instruction[24:20])
 );
@@ -143,9 +156,12 @@ RegWriteGen reg_write_gen(
     .inst_type(instruction_type.type_),
     .regwrite(reg_file.we)
 );
-ImmeGen imme_gen(
-    .inst(instruction[31:7]),
-    .inst_type(instruction_type.type_)
+BranchJumpControl branch_jump_control(
+    .inst_type(instruction_type.type_),
+    .a(reg_file.rdata1),
+    .b(reg_file.rdata2),
+    .funct3(instruction[14:12]),
+    .PC_select(pc_control)
 );
 AluControlIf alu_control_if();
 AluControl alu_control(
@@ -158,7 +174,7 @@ Alu alu(
     .a(alu_control.a_select ? reg_file.rdata1 : PC),
     .b(alu_control.b_select ? reg_file.rdata2 : imme_gen.imme),
     .control(alu_control_if),
-    .out(reg_file.wdata)
+    .out(alu_out)
 );
 
 // 不使用内存、串口时，禁用其使能信号
