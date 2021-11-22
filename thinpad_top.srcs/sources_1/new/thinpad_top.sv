@@ -1,4 +1,5 @@
 `default_nettype none
+`include "INTERFACE.sv"
 
 module thinpad_top(
     input wire clk_50M,           //50MHz 时钟输入
@@ -107,22 +108,58 @@ end
 assign base_ram_ce_n = 1'b0;
 assign base_ram_data = 'bz;
 assign base_ram_be_n = 'b0;
-reg [19:0] PC = 0;
-assign base_ram_addr = PC;
+reg [31:0] PC = 0;
+assign base_ram_addr = PC[21:2];
 reg read = 0;
 assign base_ram_oe_n = read;
 reg write = 1;
 assign base_ram_we_n = write;
+
+wire [31:0] instruction;
+assign instruction = base_ram_data;
+
 always@(posedge clk_10M or posedge reset_of_clk10M) begin
     if(reset_of_clk10M)begin
         // Your Code
     end
     else begin
         // Your Code
-        PC <= PC + 1;
+        PC <= PC + 4;
         read <= 0;
     end
 end
+
+InstructionType instruction_type(
+    .opcode(instruction[6:0])
+);
+RegFile reg_file(
+    .clk(clk_10M),
+    .rst(reset_of_clk10M),
+    .waddr(instruction[11:7]),
+    .raddr1(instruction[19:15]),
+    .raddr2(instruction[24:20])
+);
+RegWriteGen reg_write_gen(
+    .inst_type(instruction_type.type_),
+    .regwrite(reg_file.we)
+);
+ImmeGen imme_gen(
+    .inst(instruction[31:7]),
+    .inst_type(instruction_type.type_)
+);
+AluControlIf alu_control_if();
+AluControl alu_control(
+    .inst_type(instruction_type.type_),
+    .funct3(instruction[14:12]),
+    .funct7(instruction[31:25]),
+    .control(alu_control_if)
+);
+Alu alu(
+    .a(alu_control.a_select ? reg_file.rdata1 : PC),
+    .b(alu_control.b_select ? reg_file.rdata2 : imme_gen.imme),
+    .control(alu_control_if),
+    .out(reg_file.wdata)
+);
 
 // 不使用内存、串口时，禁用其使能信号
 
