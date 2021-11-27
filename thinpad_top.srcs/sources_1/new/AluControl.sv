@@ -14,7 +14,7 @@ always_comb
             control.alu_option <= ADD;
         REG, IMME : control.alu_option <= ALU_CONTROL_TYPE'(funct3[14:12]);
     endcase
-assign control.ctrl2 = (inst_type == IMME && funct3[14] == 0) ? 0 : funct7[30];
+assign control.ctrl2 = ((inst_type == REG) || (inst_type == IMME && funct3 == 3'b101)) ? funct7[30] : 0;
 assign a_select = 
     (inst_type == AUPIC ||
      inst_type == JAL ||

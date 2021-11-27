@@ -35,5 +35,11 @@ typedef enum {
     WRITE_BACK_IMME
 } WRITE_BACK_CONTROL;
 
+typedef enum {
+    NONE,
+    READ,
+    WRITE
+} READ_WRITE_CONTROL;
+
 `define CONFIG
 `endif

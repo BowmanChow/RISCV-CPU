@@ -7,7 +7,7 @@ always_comb
     case (inst_type)
         LUI : ctrl <= WRITE_BACK_IMME;
         AUPIC, IMME, REG : ctrl <= WRITE_BACK_ALU;
-        STORE : ctrl <= WRITE_BACK_MEM;
+        LOAD : ctrl <= WRITE_BACK_MEM;
         JAL, JALR : ctrl <= WRITE_BACK_PC_4;
     endcase
 endmodule
