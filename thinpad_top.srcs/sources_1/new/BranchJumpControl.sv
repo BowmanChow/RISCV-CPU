@@ -5,7 +5,7 @@ module BranchJumpControl(
     input wire [2:0] funct3,
     output PC_CONTROL PC_select
     );
-reg compare;
+logic compare;
 always_comb
     case (funct3)
         3'b000 : compare <= a == b ? 1 : 0;

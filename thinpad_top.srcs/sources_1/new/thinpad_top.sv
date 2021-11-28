@@ -78,89 +78,84 @@ module thinpad_top(
     output wire video_hsync,       //行同步（水平同步）信号
     output wire video_vsync,       //场同步（垂直同步）信号
     output wire video_clk,         //像素时钟输出
-    output wire video_de,           //行数据有效信号，用于区分消隐区
+    output wire video_de           //行数据有效信号，用于区分消隐区
 
-	output wire [31:0] __PC,
-	output wire [31:0] __PC_plus_4,
-	output wire [31:0] __instruction,
-	output wire [31:0] __immediate,
-	output wire [31:0] __alu_a,
-	output wire [31:0] __alu_b,
-	output wire [31:0] __alu_out,
-	output ALU_CONTROL_TYPE __alu_control_alu_option,
-	output wire __alu_control_ctrl2,
-	output wire [31:0] __reg_a_data,
-	output wire [31:0] __reg_b_data,
-	output wire [4:0] __reg_a_addr,
-	output wire [4:0] __reg_b_addr,
-	output wire __reg_we,
-	output wire [31:0] __registers [0:31],
-	output wire [31:0] __ram_addr,
-	output wire [31:0] __ram_data_write,
-	output wire [31:0] __ram_data_read,
-	output wire __ram_addr_PC,
-	output wire __ram_enable,
-	output wire __read,
-	output wire __write,
-	output wire __stall,
-	output wire __inst_lock,
-	output PC_CONTROL __branch_jump_control_PC_select,
-	output WRITE_BACK_CONTROL __write_back_ctrl,
-	output READ_WRITE_CONTROL __rw_control
+	// output wire [31:0] __PC,
+	// output wire [31:0] __PC_plus_4,
+	// output wire [31:0] __instruction,
+	// output wire [31:0] __immediate,
+	// output wire [31:0] __alu_a,
+	// output wire [31:0] __alu_b,
+	// output wire [31:0] __alu_out,
+	// output ALU_CONTROL_TYPE __alu_control_alu_option,
+	// output wire __alu_control_ctrl2,
+	// output wire [31:0] __reg_a_data,
+	// output wire [31:0] __reg_b_data,
+	// output wire [4:0] __reg_a_addr,
+	// output wire [4:0] __reg_b_addr,
+	// output wire __reg_we,
+	// output wire [31:0] __ram_addr,
+	// output wire [31:0] __ram_data_write,
+	// output wire [31:0] __ram_data_read,
+	// output wire __ram_addr_PC,
+	// output wire __ram_enable,
+	// output wire __read,
+	// output wire __write,
+	// output wire __stall,
+	// output wire __inst_lock,
+	// output PC_CONTROL __branch_jump_control_PC_select,
+    // output INSTRUCTION_TYPE __instruction_type,
+	// output WRITE_BACK_CONTROL __write_back_ctrl,
+	// output READ_WRITE_CONTROL __rw_control,
+	// output wire [31:0] __registers [0:31]
 );
-assign __PC = PC;
-assign __PC_plus_4 = PC_plus_4;
-assign __instruction = instruction;
-assign __immediate = imme_gen.imme;
-assign __alu_a = alu.a;
-assign __alu_b = alu.b;
-assign __alu_out = alu.out;
-assign __alu_control_alu_option = alu_control.control.alu_option;
-assign __alu_control_ctrl2 = alu_control.control.ctrl2;
-assign __reg_a_data = reg_file.a_data;
-assign __reg_b_data = reg_file.b_data;
-assign __reg_a_addr = reg_file.a_addr;
-assign __reg_b_addr = reg_file.b_addr;
-assign __reg_we = reg_file.we;
-assign __registers = reg_file.registers;
-assign __ram_addr = ram.addr;
-assign __ram_data_write = ram.data_write;
-assign __ram_data_read = ram.data_read;
-assign __ram_addr_PC = ram_addr_PC;
-assign __ram_enable = ram_enable;
-assign __read = read;
-assign __write = write;
-assign __stall = stall;
-assign __inst_lock = inst_lock;
-assign __branch_jump_control_PC_select = branch_jump_control.PC_select;
-assign __write_back_ctrl = write_back_ctrl.ctrl;
-assign __rw_control = rw_control.rw;
+// assign __PC = PC;
+// assign __PC_plus_4 = PC_plus_4;
+// assign __instruction = instruction;
+// assign __immediate = imme_gen.imme;
+// assign __alu_a = alu.a;
+// assign __alu_b = alu.b;
+// assign __alu_out = alu.out;
+// assign __alu_control_alu_option = alu_control.control.alu_option;
+// assign __alu_control_ctrl2 = alu_control.control.ctrl2;
+// assign __reg_a_data = reg_file.a_data;
+// assign __reg_b_data = reg_file.b_data;
+// assign __reg_a_addr = reg_file.a_addr;
+// assign __reg_b_addr = reg_file.b_addr;
+// assign __reg_we = reg_file.we;
+// assign __ram_addr = ram.addr;
+// assign __ram_data_write = ram.data_write;
+// assign __ram_data_read = ram.data_read;
+// assign __ram_addr_PC = ram_addr_PC;
+// assign __ram_enable = ram_enable;
+// assign __read = read;
+// assign __write = write;
+// assign __stall = stall;
+// assign __inst_lock = inst_lock;
+// assign __branch_jump_control_PC_select = branch_jump_control.PC_select;
+// assign __instruction_type = instruction_type.type_;
+// assign __write_back_ctrl = write_back_ctrl.ctrl;
+// assign __rw_control = rw_control.rw;
+// assign __registers = reg_file.registers;
 
 
 /* =========== Demo code begin =========== */
 
-// PLL分频示例
-wire locked, clk_10M, clk_20M;
-pll_example clock_gen 
- (
-  // Clock in ports
-  .clk_in1(clk_50M),  // 外部时钟输入
-  // Clock out ports
-  .clk_out1(clk_10M), // 时钟输出1，频率在IP配置界面中设置
-  .clk_out2(clk_20M), // 时钟输出2，频率在IP配置界面中设置
-  // Status and control signals
-  .reset(reset_btn), // PLL复位输入
-  .locked(locked)    // PLL锁定指示输出，"1"表示时钟稳定，
-                     // 后级电路复位信号应当由它生成（见下）
- );
+reg clk_12_5M;
+reg counter;
+always @(posedge clk_50M or posedge reset_btn) begin
+    if (reset_btn) begin
+        counter <= 0;
+        clk_12_5M <= 0;
+    end
+    else begin
+        counter <= counter + 1;
+        if (counter == 0)
+            clk_12_5M <= ~clk_12_5M;
+    end
+    
+end
 
-wire reset_of_clk10M;
-assign reset_of_clk10M = ~locked;
-// 异步复位，同步释放，将locked信号转为后级电路的复位reset_of_clk10M
-// always@(posedge clk_10M or negedge locked) begin
-//     if(~locked) reset_of_clk10M <= 1'b1;
-//     else        reset_of_clk10M <= 1'b0;
-// end
 
 wire [7:0] uart_status;
 assign uart_status = {2'b0, uart_tsre, 4'b0, uart_dataready};
@@ -175,13 +170,17 @@ wire [31:0] PC_plus_4;
 assign PC_plus_4 = PC + 4;
 reg read = 1;
 reg write = 0;
-wire [31:0] instruction;
+logic [31:0] instruction;
+reg [31:0] instruction_reg;
 reg inst_lock = 0;
-assign instruction = inst_lock ? instruction : ram.data_read;
+always @(posedge inst_lock)
+    instruction_reg <= instruction;
+always_comb
+    instruction <= inst_lock ? instruction_reg : ram.data_read;
 reg ram_addr_PC = 1;
 reg stall = 0;
-always@(posedge clk_10M or posedge reset_of_clk10M or negedge clk_10M) begin
-    if (reset_of_clk10M) begin
+always@(posedge clk_12_5M or posedge reset_btn or negedge clk_12_5M) begin
+    if (reset_btn) begin
         uart_read <= 0;
 		uart_write <= 0;
 		ram_enable <= 1;
@@ -192,7 +191,7 @@ always@(posedge clk_10M or posedge reset_of_clk10M or negedge clk_10M) begin
 		ram_addr_PC <= 1;
 		stall <= 0;
     end
-    else if (clk_10M) begin
+    else if (clk_12_5M) begin
         if (stall) begin
             PC <= PC;
             if (ram.addr[31:28] == 1 && ram.addr[3:0] == 0)
@@ -221,6 +220,9 @@ always@(posedge clk_10M or posedge reset_of_clk10M or negedge clk_10M) begin
             ram_addr_PC <= 0;
             read <= 0;
             stall <= ~stall;
+        end
+        else begin
+            inst_lock <= 0;
         end
         write <= 0;
         uart_write <= 0;
@@ -270,8 +272,8 @@ ImmeGen imme_gen(
     .inst_type(instruction_type.type_)
 );
 RegFile reg_file(
-    .clk(clk_10M),
-    .rst(reset_of_clk10M),
+    .clk(clk_12_5M),
+    .rst(reset_btn),
     .write_addr(instruction[11:7]),
     .write_data(
         (write_back_ctrl.ctrl == WRITE_BACK_ALU) ? alu.out :
