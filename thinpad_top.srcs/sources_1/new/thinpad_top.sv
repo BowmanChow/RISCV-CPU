@@ -105,8 +105,15 @@ always@(posedge clk_10M or negedge locked) begin
     else        reset_of_clk10M <= 1'b0;
 end
 
+wire [7:0] uart_status;
+assign uart_status = {2'b0, uart_tsre, 4'b0, uart_dataready};
+reg uart_read = 0;
+assign uart_rdn = ~uart_read;
+reg uart_write = 0;
+assign uart_wrn = ~uart_write;
+
 reg ram_enable = 1;
-reg [31:0] PC = 0;
+reg [31:0] PC = 32'h80000000;
 reg read = 1;
 reg write = 0;
 wire [31:0] instruction;
@@ -114,8 +121,47 @@ reg inst_lock = 0;
 assign instruction = inst_lock ? instruction : ram.data_read;
 reg ram_addr_PC = 1;
 reg stall = 0;
+always@(posedge clk_10M or posedge reset_of_clk10M or negedge clk_10M) begin
+    if(reset_of_clk10M)begin
+        // Your Code
+    end
+    else if (clk_10M) begin
+        if (stall) begin
+            PC <= PC;
+            if (ram.addr[31:28] == 1 && ram.addr[3:0] == 0)
+                uart_write <= 0;
+            else
+                write <= 1;
+        end
+        else begin
+            inst_lock <= 0;
+            PC <= (branch_jump_control.PC_select == PC_ALU) ? alu.out : PC + 4;
+            ram_addr_PC <= 1;
+            read <= 1;
+            uart_read <= 0;
+        end
+    end
+    else begin
+        if (rw_control.rw == READ) begin
+            inst_lock <= 1;
+            ram_addr_PC <= 0;
+            read <= 1;
+            if (ram.addr[31:28] == 1 && ram.addr[3:0] == 0)
+                uart_read <= 1;
+        end
+        else if (rw_control.rw == WRITE) begin
+            inst_lock <= 1;
+            ram_addr_PC <= 0;
+            read <= 0;
+            stall <= ~stall;
+        end
+        write <= 0;
+        uart_write <= 0;
+    end
+end
+
 Sram ram(
-    .enable(ram_enable),
+    .enable(ram.addr[31:28] == 1 ? 0 : ram_enable),
     .read(read),
     .write(write),
     .addr(ram_addr_PC ? PC : alu.out),
@@ -135,38 +181,14 @@ Sram ram(
     .ext_ram_oe_n(ext_ram_oe_n),
     .ext_ram_we_n(ext_ram_we_n)
 );
-always@(posedge clk_10M or posedge reset_of_clk10M or negedge clk_10M) begin
-    if(reset_of_clk10M)begin
-        // Your Code
-    end
-    else if (clk_10M) begin
-        if (stall) begin
-            PC <= PC;
-            write <= 1;
-        end
-        else begin
-            inst_lock <= 0;
-            PC <= (branch_jump_control.PC_select == PC_ALU) ? alu.out : PC + 4;
-            ram_addr_PC <= 1;
-            read <= 1;
-        end
-    end
-    else begin
-        if (rw_control.rw == READ) begin
-            inst_lock <= 1;
-            ram_addr_PC <= 0;
-            read <= 1;
-        end
-        else if (rw_control.rw == WRITE) begin
-            inst_lock <= 1;
-            ram_addr_PC <= 0;
-            read <= 0;
-            stall <= ~stall;
-        end
-        write <= 0;
-    end
-end
-
+ReadWriteData rw_data(
+    .read_data_in(ram.addr[31:28] == 1 ?
+        (ram.addr[3:0] == 5 ? uart_status : base_ram_data[7:0]) :
+        ram.data_read),
+    .write_data_in(reg_file.rdata2),
+    .funct3(instruction[14:12]),
+    .address(ram.addr[1:0])
+);
 InstructionType instruction_type(
     .opcode(instruction[6:0])
 );
@@ -191,12 +213,6 @@ RegFile reg_file(
     ),
     .raddr1(instruction[19:15]),
     .raddr2(instruction[24:20])
-);
-ReadWriteData rw_data(
-    .read_data_in(ram.data_read),
-    .write_data_in(reg_file.rdata2),
-    .funct3(instruction[14:12]),
-    .address(ram.addr[1:0])
 );
 RegWriteGen reg_write_gen(
     .inst_type(instruction_type.type_),
