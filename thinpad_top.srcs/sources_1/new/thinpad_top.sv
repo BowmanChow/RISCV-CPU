@@ -78,8 +78,64 @@ module thinpad_top(
     output wire video_hsync,       //行同步（水平同步）信号
     output wire video_vsync,       //场同步（垂直同步）信号
     output wire video_clk,         //像素时钟输出
-    output wire video_de           //行数据有效信号，用于区分消隐区
+    output wire video_de,           //行数据有效信号，用于区分消隐区
+
+	output wire [31:0] __PC,
+	output wire [31:0] __PC_plus_4,
+	output wire [31:0] __instruction,
+	output wire [31:0] __immediate,
+	output wire [31:0] __alu_a,
+	output wire [31:0] __alu_b,
+	output wire [31:0] __alu_out,
+	output ALU_CONTROL_TYPE __alu_control_alu_option,
+	output wire __alu_control_ctrl2,
+	output wire [31:0] __reg_a_data,
+	output wire [31:0] __reg_b_data,
+	output wire [4:0] __reg_a_addr,
+	output wire [4:0] __reg_b_addr,
+	output wire __reg_we,
+	output wire [31:0] __registers [0:31],
+	output wire [31:0] __ram_addr,
+	output wire [31:0] __ram_data_write,
+	output wire [31:0] __ram_data_read,
+	output wire __ram_addr_PC,
+	output wire __ram_enable,
+	output wire __read,
+	output wire __write,
+	output wire __stall,
+	output wire __inst_lock,
+	output PC_CONTROL __branch_jump_control_PC_select,
+	output WRITE_BACK_CONTROL __write_back_ctrl,
+	output READ_WRITE_CONTROL __rw_control
 );
+assign __PC = PC;
+assign __PC_plus_4 = PC_plus_4;
+assign __instruction = instruction;
+assign __immediate = imme_gen.imme;
+assign __alu_a = alu.a;
+assign __alu_b = alu.b;
+assign __alu_out = alu.out;
+assign __alu_control_alu_option = alu_control.control.alu_option;
+assign __alu_control_ctrl2 = alu_control.control.ctrl2;
+assign __reg_a_data = reg_file.a_data;
+assign __reg_b_data = reg_file.b_data;
+assign __reg_a_addr = reg_file.a_addr;
+assign __reg_b_addr = reg_file.b_addr;
+assign __reg_we = reg_file.we;
+assign __registers = reg_file.registers;
+assign __ram_addr = ram.addr;
+assign __ram_data_write = ram.data_write;
+assign __ram_data_read = ram.data_read;
+assign __ram_addr_PC = ram_addr_PC;
+assign __ram_enable = ram_enable;
+assign __read = read;
+assign __write = write;
+assign __stall = stall;
+assign __inst_lock = inst_lock;
+assign __branch_jump_control_PC_select = branch_jump_control.PC_select;
+assign __write_back_ctrl = write_back_ctrl.ctrl;
+assign __rw_control = rw_control.rw;
+
 
 /* =========== Demo code begin =========== */
 
@@ -98,12 +154,13 @@ pll_example clock_gen
                      // 后级电路复位信号应当由它生成（见下）
  );
 
-reg reset_of_clk10M;
+wire reset_of_clk10M;
+assign reset_of_clk10M = ~locked;
 // 异步复位，同步释放，将locked信号转为后级电路的复位reset_of_clk10M
-always@(posedge clk_10M or negedge locked) begin
-    if(~locked) reset_of_clk10M <= 1'b1;
-    else        reset_of_clk10M <= 1'b0;
-end
+// always@(posedge clk_10M or negedge locked) begin
+//     if(~locked) reset_of_clk10M <= 1'b1;
+//     else        reset_of_clk10M <= 1'b0;
+// end
 
 wire [7:0] uart_status;
 assign uart_status = {2'b0, uart_tsre, 4'b0, uart_dataready};
@@ -114,6 +171,8 @@ assign uart_wrn = ~uart_write;
 
 reg ram_enable = 1;
 reg [31:0] PC = 32'h80000000;
+wire [31:0] PC_plus_4;
+assign PC_plus_4 = PC + 4;
 reg read = 1;
 reg write = 0;
 wire [31:0] instruction;
@@ -122,8 +181,16 @@ assign instruction = inst_lock ? instruction : ram.data_read;
 reg ram_addr_PC = 1;
 reg stall = 0;
 always@(posedge clk_10M or posedge reset_of_clk10M or negedge clk_10M) begin
-    if(reset_of_clk10M)begin
-        // Your Code
+    if (reset_of_clk10M) begin
+        uart_read <= 0;
+		uart_write <= 0;
+		ram_enable <= 1;
+		PC <= 32'h80000000;
+		read <= 1;
+		write <= 0;
+		inst_lock <= 0;
+		ram_addr_PC <= 1;
+		stall <= 0;
     end
     else if (clk_10M) begin
         if (stall) begin
@@ -135,7 +202,7 @@ always@(posedge clk_10M or posedge reset_of_clk10M or negedge clk_10M) begin
         end
         else begin
             inst_lock <= 0;
-            PC <= (branch_jump_control.PC_select == PC_ALU) ? alu.out : PC + 4;
+            PC <= (branch_jump_control.PC_select == PC_ALU) ? alu.out : PC_plus_4;
             ram_addr_PC <= 1;
             read <= 1;
             uart_read <= 0;
@@ -185,7 +252,7 @@ ReadWriteData rw_data(
     .read_data_in(ram.addr[31:28] == 1 ?
         (ram.addr[3:0] == 5 ? uart_status : base_ram_data[7:0]) :
         ram.data_read),
-    .write_data_in(reg_file.rdata2),
+    .write_data_in(reg_file.b_data),
     .funct3(instruction[14:12]),
     .address(ram.addr[1:0])
 );
@@ -205,14 +272,14 @@ ImmeGen imme_gen(
 RegFile reg_file(
     .clk(clk_10M),
     .rst(reset_of_clk10M),
-    .waddr(instruction[11:7]),
-    .wdata(
+    .write_addr(instruction[11:7]),
+    .write_data(
         (write_back_ctrl.ctrl == WRITE_BACK_ALU) ? alu.out :
-        (write_back_ctrl.ctrl == WRITE_BACK_PC_4) ? PC + 4 :
+        (write_back_ctrl.ctrl == WRITE_BACK_PC_4) ? PC_plus_4 :
         (write_back_ctrl.ctrl == WRITE_BACK_IMME) ? imme_gen.imme : rw_data.read_data_out
     ),
-    .raddr1(instruction[19:15]),
-    .raddr2(instruction[24:20])
+    .a_addr(instruction[19:15]),
+    .b_addr(instruction[24:20])
 );
 RegWriteGen reg_write_gen(
     .inst_type(instruction_type.type_),
@@ -220,8 +287,8 @@ RegWriteGen reg_write_gen(
 );
 BranchJumpControl branch_jump_control(
     .inst_type(instruction_type.type_),
-    .a(reg_file.rdata1),
-    .b(reg_file.rdata2),
+    .a(reg_file.a_data),
+    .b(reg_file.b_data),
     .funct3(instruction[14:12])
 );
 AluControlIf alu_control_if();
@@ -232,16 +299,10 @@ AluControl alu_control(
     .control(alu_control_if)
 );
 Alu alu(
-    .a(alu_control.a_select ? reg_file.rdata1 : PC),
-    .b(alu_control.b_select ? reg_file.rdata2 : imme_gen.imme),
+    .a(alu_control.a_select ? reg_file.a_data : PC),
+    .b(alu_control.b_select ? reg_file.b_data : imme_gen.imme),
     .control(alu_control_if)
 );
-
-// 不使用内存、串口时，禁用其使能信号
-
-
-assign uart_rdn = 1'b1;
-assign uart_wrn = 1'b1;
 
 // 7段数码管译码器演示，将number用16进制显示在数码管上面
 wire[7:0] number;

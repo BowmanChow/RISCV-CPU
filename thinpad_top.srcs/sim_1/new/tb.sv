@@ -72,6 +72,7 @@ initial begin
 end
 
 // 待测试用户设计
+wire [31:0] __registers [0:31];
 thinpad_top dut(
     .clk_50M(clk_50M),
     .clk_11M0592(clk_11M0592),
@@ -108,7 +109,8 @@ thinpad_top dut(
     .flash_oe_n(flash_oe_n),
     .flash_ce_n(flash_ce_n),
     .flash_byte_n(flash_byte_n),
-    .flash_we_n(flash_we_n)
+    .flash_we_n(flash_we_n),
+    .__registers(__registers)
 );
 // 时钟源
 clock osc(

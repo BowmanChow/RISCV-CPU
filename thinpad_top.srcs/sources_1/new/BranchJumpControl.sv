@@ -2,7 +2,7 @@
 module BranchJumpControl(
     input INSTRUCTION_TYPE inst_type,
     input unsigned [31:0] a, b,
-    input [2:0] funct3,
+    input wire [2:0] funct3,
     output PC_CONTROL PC_select
     );
 reg compare;
