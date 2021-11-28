@@ -129,7 +129,7 @@ always@(posedge clk_10M or posedge reset_of_clk10M or negedge clk_10M) begin
         if (stall) begin
             PC <= PC;
             if (ram.addr[31:28] == 1 && ram.addr[3:0] == 0)
-                uart_write <= 0;
+                uart_write <= 1;
             else
                 write <= 1;
         end
