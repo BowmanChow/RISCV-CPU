@@ -73,6 +73,7 @@ end
 
 // 待测试用户设计
 wire [31:0] __registers [0:31];
+// assign __registers = dut.__registers;
 thinpad_top dut(
     .clk_50M(clk_50M),
     .clk_11M0592(clk_11M0592),

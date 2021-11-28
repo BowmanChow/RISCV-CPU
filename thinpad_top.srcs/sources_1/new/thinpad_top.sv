@@ -71,6 +71,38 @@ module thinpad_top(
     output wire dm9k_pwrst_n,
     input  wire dm9k_int,
 
+// `define debug
+`ifdef debug
+	output wire [31:0] __PC,
+	output wire [31:0] __PC_plus_4,
+	output wire [31:0] __instruction,
+	output wire [31:0] __immediate,
+	output wire [31:0] __alu_a,
+	output wire [31:0] __alu_b,
+	output wire [31:0] __alu_out,
+	output ALU_CONTROL_TYPE __alu_control_alu_option,
+	output wire __alu_control_ctrl2,
+	output wire [31:0] __reg_a_data,
+	output wire [31:0] __reg_b_data,
+	output wire [4:0] __reg_a_addr,
+	output wire [4:0] __reg_b_addr,
+	output wire __reg_we,
+	output wire [31:0] __ram_addr,
+	output wire [31:0] __ram_data_write,
+	output wire [31:0] __ram_data_read,
+	output wire __ram_addr_PC,
+	output wire __ram_enable,
+	output wire __read,
+	output wire __write,
+	output wire __stall,
+	output wire __inst_lock,
+	output PC_CONTROL __branch_jump_control_PC_select,
+    output INSTRUCTION_TYPE __instruction_type,
+	output WRITE_BACK_CONTROL __write_back_ctrl,
+	output READ_WRITE_CONTROL __rw_control,
+	output wire [31:0] __registers [0:31],
+`endif
+
     //图像输出信号
     output wire[2:0] video_red,    //红色像素，3位
     output wire[2:0] video_green,  //绿色像素，3位
@@ -79,64 +111,37 @@ module thinpad_top(
     output wire video_vsync,       //场同步（垂直同步）信号
     output wire video_clk,         //像素时钟输出
     output wire video_de           //行数据有效信号，用于区分消隐区
-
-	// output wire [31:0] __PC,
-	// output wire [31:0] __PC_plus_4,
-	// output wire [31:0] __instruction,
-	// output wire [31:0] __immediate,
-	// output wire [31:0] __alu_a,
-	// output wire [31:0] __alu_b,
-	// output wire [31:0] __alu_out,
-	// output ALU_CONTROL_TYPE __alu_control_alu_option,
-	// output wire __alu_control_ctrl2,
-	// output wire [31:0] __reg_a_data,
-	// output wire [31:0] __reg_b_data,
-	// output wire [4:0] __reg_a_addr,
-	// output wire [4:0] __reg_b_addr,
-	// output wire __reg_we,
-	// output wire [31:0] __ram_addr,
-	// output wire [31:0] __ram_data_write,
-	// output wire [31:0] __ram_data_read,
-	// output wire __ram_addr_PC,
-	// output wire __ram_enable,
-	// output wire __read,
-	// output wire __write,
-	// output wire __stall,
-	// output wire __inst_lock,
-	// output PC_CONTROL __branch_jump_control_PC_select,
-    // output INSTRUCTION_TYPE __instruction_type,
-	// output WRITE_BACK_CONTROL __write_back_ctrl,
-	// output READ_WRITE_CONTROL __rw_control,
-	// output wire [31:0] __registers [0:31]
 );
-// assign __PC = PC;
-// assign __PC_plus_4 = PC_plus_4;
-// assign __instruction = instruction;
-// assign __immediate = imme_gen.imme;
-// assign __alu_a = alu.a;
-// assign __alu_b = alu.b;
-// assign __alu_out = alu.out;
-// assign __alu_control_alu_option = alu_control.control.alu_option;
-// assign __alu_control_ctrl2 = alu_control.control.ctrl2;
-// assign __reg_a_data = reg_file.a_data;
-// assign __reg_b_data = reg_file.b_data;
-// assign __reg_a_addr = reg_file.a_addr;
-// assign __reg_b_addr = reg_file.b_addr;
-// assign __reg_we = reg_file.we;
-// assign __ram_addr = ram.addr;
-// assign __ram_data_write = ram.data_write;
-// assign __ram_data_read = ram.data_read;
-// assign __ram_addr_PC = ram_addr_PC;
-// assign __ram_enable = ram_enable;
-// assign __read = read;
-// assign __write = write;
-// assign __stall = stall;
-// assign __inst_lock = inst_lock;
-// assign __branch_jump_control_PC_select = branch_jump_control.PC_select;
-// assign __instruction_type = instruction_type.type_;
-// assign __write_back_ctrl = write_back_ctrl.ctrl;
-// assign __rw_control = rw_control.rw;
-// assign __registers = reg_file.registers;
+`ifdef debug
+assign __PC = PC;
+assign __PC_plus_4 = PC_plus_4;
+assign __instruction = instruction;
+assign __immediate = imme_gen.imme;
+assign __alu_a = alu.a;
+assign __alu_b = alu.b;
+assign __alu_out = alu.out;
+assign __alu_control_alu_option = alu_control.control.alu_option;
+assign __alu_control_ctrl2 = alu_control.control.ctrl2;
+assign __reg_a_data = reg_file.a_data;
+assign __reg_b_data = reg_file.b_data;
+assign __reg_a_addr = reg_file.a_addr;
+assign __reg_b_addr = reg_file.b_addr;
+assign __reg_we = reg_file.we;
+assign __ram_addr = ram.addr;
+assign __ram_data_write = ram.data_write;
+assign __ram_data_read = ram.data_read;
+assign __ram_addr_PC = ram_addr_PC;
+assign __ram_enable = ram_enable;
+assign __read = read;
+assign __write = write;
+assign __stall = stall;
+assign __inst_lock = inst_lock;
+assign __branch_jump_control_PC_select = branch_jump_control.PC_select;
+assign __instruction_type = instruction_type.type_;
+assign __write_back_ctrl = write_back_ctrl.ctrl;
+assign __rw_control = rw_control.rw;
+assign __registers = reg_file.registers;
+`endif
 
 
 /* =========== Demo code begin =========== */
