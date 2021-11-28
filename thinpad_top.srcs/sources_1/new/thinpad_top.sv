@@ -179,12 +179,22 @@ always_comb
     instruction <= inst_lock ? instruction_reg : ram.data_read;
 reg ram_addr_PC = 1;
 reg stall = 0;
+always @(posedge clk_12_5M or posedge reset_btn) begin
+    if (reset_btn) begin
+        PC <= 32'h80000000;
+    end
+    else begin
+        if (stall)
+            PC <= PC;
+        else
+            PC <= (branch_jump_control.PC_select == PC_ALU) ? alu.out : PC_plus_4;
+    end
+end
 always@(posedge clk_12_5M or posedge reset_btn or negedge clk_12_5M) begin
     if (reset_btn) begin
         uart_read <= 0;
 		uart_write <= 0;
 		ram_enable <= 1;
-		PC <= 32'h80000000;
 		read <= 1;
 		write <= 0;
 		inst_lock <= 0;
@@ -193,7 +203,6 @@ always@(posedge clk_12_5M or posedge reset_btn or negedge clk_12_5M) begin
     end
     else if (clk_12_5M) begin
         if (stall) begin
-            PC <= PC;
             if (ram.addr[31:28] == 1 && ram.addr[3:0] == 0)
                 uart_write <= 1;
             else
@@ -201,7 +210,6 @@ always@(posedge clk_12_5M or posedge reset_btn or negedge clk_12_5M) begin
         end
         else begin
             inst_lock <= 0;
-            PC <= (branch_jump_control.PC_select == PC_ALU) ? alu.out : PC_plus_4;
             ram_addr_PC <= 1;
             read <= 1;
             uart_read <= 0;
