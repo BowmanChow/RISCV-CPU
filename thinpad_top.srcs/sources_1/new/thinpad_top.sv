@@ -167,7 +167,7 @@ end
 
 
 wire [7:0] uart_status;
-assign uart_status = {2'b0, uart_tsre, 4'b0, uart_dataready};
+assign uart_status = {2'h0, uart_tsre, 4'h0, uart_dataready};
 reg uart_read = 0;
 assign uart_rdn = ~uart_read;
 reg uart_write = 0;
@@ -276,7 +276,7 @@ Sram ram(
 );
 ReadWriteData rw_data(
     .read_data_in(ram.addr[31:28] == 1 ?
-        (ram.addr[3:0] == 5 ? {24'h0, uart_status} : {24'h0, base_ram_data[7:0]}) :
+        (ram.addr[3:0] == 5 ? {24'h000000, uart_status} : {24'h000000, base_ram_data[7:0]}) :
         ram.data_read),
     .write_data_in(reg_file.b_data),
     .funct3(instruction[14:12]),
