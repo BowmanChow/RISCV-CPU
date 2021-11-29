@@ -276,7 +276,7 @@ Sram ram(
 );
 ReadWriteData rw_data(
     .read_data_in(ram.addr[31:28] == 1 ?
-        (ram.addr[3:0] == 5 ? {24'h000000, uart_status} : {24'h000000, base_ram_data[7:0]}) :
+        (ram.addr[3:0] == 5 ? {16'h0000, uart_status, 8'h00} : {24'h000000, base_ram_data[7:0]}) :
         ram.data_read),
     .write_data_in(reg_file.b_data),
     .funct3(instruction[14:12]),
