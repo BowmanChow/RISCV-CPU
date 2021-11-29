@@ -193,7 +193,7 @@ always_ff @(posedge clk_12_5M or posedge reset_btn) begin
             PC <= (branch_jump_control.PC_select == PC_ALU) ? alu.out : PC_plus_4;
     end
 end
-always@(posedge clk_12_5M or posedge reset_btn or negedge clk_12_5M) begin
+always_ff @(posedge clk_12_5M or posedge reset_btn or negedge clk_12_5M) begin
     if (reset_btn) begin
         uart_read <= 0;
 		uart_write <= 0;
@@ -319,8 +319,10 @@ Alu alu(
 
 // 7段数码管译码器演示，将number用16进制显示在数码管上面
 wire[7:0] number;
+assign number = reg_file.regs[30][7:0];
 SEG7_LUT segL(.oSEG1(dpy0), .iDIG(number[3:0])); //dpy0是低位数码管
 SEG7_LUT segH(.oSEG1(dpy1), .iDIG(number[7:4])); //dpy1是高位数码管
 /* =========== Demo code end =========== */
+assign leds = reg_file.regs[31][15:0];
 
 endmodule
