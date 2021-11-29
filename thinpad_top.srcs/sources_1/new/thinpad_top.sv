@@ -94,8 +94,9 @@ module thinpad_top(
 	output wire __ram_enable,
 	output wire __read,
 	output wire __write,
+    output wire __uart_read,
+    output wire __uart_write,
 	output wire __stall,
-	output wire __inst_lock,
 	output PC_CONTROL __branch_jump_control_PC_select,
     output INSTRUCTION_TYPE __instruction_type,
 	output WRITE_BACK_CONTROL __write_back_ctrl,
@@ -131,11 +132,12 @@ assign __ram_addr = ram.addr;
 assign __ram_data_write = ram.data_write;
 assign __ram_data_read = ram.data_read;
 assign __ram_addr_PC = ram_addr_PC;
-assign __ram_enable = ram_enable;
+assign __ram_enable = ram.enable;
 assign __read = read;
 assign __write = write;
+assign __uart_read = uart_read;
+assign __uart_write = uart_write;
 assign __stall = stall;
-assign __inst_lock = inst_lock;
 assign __branch_jump_control_PC_select = branch_jump_control.PC_select;
 assign __instruction_type = instruction_type.type_;
 assign __write_back_ctrl = write_back_ctrl.ctrl;
@@ -169,16 +171,14 @@ assign uart_rdn = ~uart_read;
 reg uart_write = 0;
 assign uart_wrn = ~uart_write;
 
-reg ram_enable = 1;
 reg [31:0] PC = 32'h80000000;
 wire [31:0] PC_plus_4;
 assign PC_plus_4 = PC + 4;
 reg read = 1;
 reg write = 0;
 logic [31:0] instruction;
-reg inst_lock = 0;
 always_latch
-    if (!inst_lock)
+    if (ram_addr_PC)
         instruction = ram.data_read;
 reg ram_addr_PC = 1;
 reg stall = 0;
@@ -197,22 +197,26 @@ always_ff @(posedge clk_12_5M or posedge reset_btn or negedge clk_12_5M) begin
     if (reset_btn) begin
         uart_read <= 0;
 		uart_write <= 0;
-		ram_enable <= 1;
 		read <= 1;
 		write <= 0;
-		inst_lock <= 0;
 		ram_addr_PC <= 1;
 		stall <= 0;
     end
     else if (clk_12_5M) begin
         if (stall) begin
-            if (ram.addr[31:28] == 1 && ram.addr[3:0] == 0)
-                uart_write <= 1;
-            else
-                write <= 1;
+            if (rw_control.rw == READ) begin
+                read <= 1;
+                if (ram.addr[31:28] == 1 && ram.addr[3:0] == 0)
+                    uart_read <= 1;
+            end
+            else if (rw_control.rw == WRITE) begin
+                if (ram.addr[31:28] == 1 && ram.addr[3:0] == 0)
+                    uart_write <= 1;
+                else
+                    write <= 1;
+            end
         end
         else begin
-            inst_lock <= 0;
             ram_addr_PC <= 1;
             read <= 1;
             uart_read <= 0;
@@ -220,28 +224,23 @@ always_ff @(posedge clk_12_5M or posedge reset_btn or negedge clk_12_5M) begin
     end
     else begin
         if (rw_control.rw == READ) begin
-            inst_lock <= 1;
             ram_addr_PC <= 0;
             read <= 1;
-            if (ram.addr[31:28] == 1 && ram.addr[3:0] == 0)
-                uart_read <= 1;
+            stall <= ~stall;
         end
         else if (rw_control.rw == WRITE) begin
-            inst_lock <= 1;
             ram_addr_PC <= 0;
             read <= 0;
             stall <= ~stall;
         end
-        else begin
-            inst_lock <= 0;
-        end
         write <= 0;
         uart_write <= 0;
+        uart_read <= 0;
     end
 end
 
 Sram ram(
-    .enable(ram.addr[31:28] == 1 ? 0 : ram_enable),
+    .enable(ram.addr[31:28] == 1 ? 0 : 1),
     .read(read),
     .write(write),
     .addr(ram_addr_PC ? PC : alu.out),
