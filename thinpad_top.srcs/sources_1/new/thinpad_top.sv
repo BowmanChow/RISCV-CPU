@@ -71,7 +71,7 @@ module thinpad_top(
     output wire dm9k_pwrst_n,
     input  wire dm9k_int,
 
-// `define debug
+`define debug
 `ifdef debug
 	output wire [31:0] __PC,
 	output wire [31:0] __PC_plus_4,
@@ -90,13 +90,14 @@ module thinpad_top(
 	output wire [31:0] __ram_addr,
 	output wire [31:0] __ram_data_write,
 	output wire [31:0] __ram_data_read,
+    output wire __inst_lock,
 	output wire __ram_addr_PC,
 	output wire __ram_enable,
 	output wire __read,
 	output wire __write,
     output wire __uart_read,
     output wire __uart_write,
-	output wire __stall,
+	output wire [1:0] __stall,
 	output PC_CONTROL __branch_jump_control_PC_select,
     output INSTRUCTION_TYPE __instruction_type,
 	output WRITE_BACK_CONTROL __write_back_ctrl,
@@ -131,6 +132,7 @@ assign __reg_we = reg_file.we;
 assign __ram_addr = ram.addr;
 assign __ram_data_write = ram.data_write;
 assign __ram_data_read = ram.data_read;
+assign __inst_lock = inst_lock;
 assign __ram_addr_PC = ram_addr_PC;
 assign __ram_enable = ram.enable;
 assign __read = read;
@@ -177,65 +179,77 @@ assign PC_plus_4 = PC + 4;
 reg read = 1;
 reg write = 0;
 logic [31:0] instruction;
+reg inst_lock = 0;
 always_latch
-    if (ram_addr_PC)
+    if (!inst_lock)
         instruction = ram.data_read;
 reg ram_addr_PC = 1;
-reg stall = 0;
+reg [1:0] stall = 2'b00;
 always_ff @(posedge clk_12_5M or posedge reset_btn) begin
     if (reset_btn) begin
         PC <= 32'h80000000;
     end
     else begin
-        if (stall)
+        if (stall != 0)
             PC <= PC;
         else
             PC <= (branch_jump_control.PC_select == PC_ALU) ? alu.out : PC_plus_4;
     end
 end
-always_ff @(posedge clk_12_5M or posedge reset_btn or negedge clk_12_5M) begin
+always_ff @(posedge clk_12_5M or posedge reset_btn) begin
     if (reset_btn) begin
+		ram_addr_PC <= 1;
+		read <= 1;
+    end
+    else begin
+        read <=
+            (stall == 0) ? 1 :
+            (rw_control.rw == WRITE) ? 0 : 1;
+        ram_addr_PC <= (stall == 0) ? 1 : 0;
+    end
+end
+always_ff @(negedge clk_12_5M or posedge reset_btn) begin
+    if (reset_btn) begin
+		write <= 0;
         uart_read <= 0;
 		uart_write <= 0;
-		read <= 1;
-		write <= 0;
-		ram_addr_PC <= 1;
 		stall <= 0;
     end
-    else if (clk_12_5M) begin
-        if (stall) begin
-            if (rw_control.rw == READ) begin
-                read <= 1;
-                if (ram.addr[31:28] == 1 && ram.addr[3:0] == 0)
-                    uart_read <= 1;
-            end
-            else if (rw_control.rw == WRITE) begin
-                if (ram.addr[31:28] == 1 && ram.addr[3:0] == 0)
-                    uart_write <= 1;
-                else
-                    write <= 1;
-            end
+    else begin
+        if (stall[1]) begin
+            stall <= 2'b01;
+            write <= (rw_control.rw == WRITE && ram.addr[31:28] != 1) ? 1 : 0;
+            uart_read <= (rw_control.rw == READ && ram.addr[31:28] == 1 && ram.addr[3:0] == 0) ? 1 : 0;
+            uart_write <= (rw_control.rw == WRITE && ram.addr[31:28] == 1 && ram.addr[3:0] == 0) ? 1 : 0;
+        end
+        else if (stall == 2'b01) begin
+            stall <= 0;
+            write <= 0;
+            uart_read <= 0;
+            uart_write <= 0;
         end
         else begin
-            ram_addr_PC <= 1;
-            read <= 1;
+            stall <= (rw_control.rw == READ || rw_control.rw == WRITE) ? 2'b10 : 0;
+            write <= 0;
             uart_read <= 0;
+            uart_write <= 0;
+        end
+    end
+end
+always_ff @(posedge clk_12_5M or posedge reset_btn or negedge clk_12_5M) begin
+    if (reset_btn) begin
+        inst_lock <= 0;
+    end
+    else if (clk_12_5M) begin
+        if (stall != 0) begin
+            inst_lock <= 1;
+        end
+        else begin
+            inst_lock <= 0;
         end
     end
     else begin
-        if (rw_control.rw == READ) begin
-            ram_addr_PC <= 0;
-            read <= 1;
-            stall <= ~stall;
-        end
-        else if (rw_control.rw == WRITE) begin
-            ram_addr_PC <= 0;
-            read <= 0;
-            stall <= ~stall;
-        end
-        write <= 0;
-        uart_write <= 0;
-        uart_read <= 0;
+        inst_lock <= (rw_control.rw == READ || rw_control.rw == WRITE) ? 1 : 0;
     end
 end
 

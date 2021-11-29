@@ -3,22 +3,21 @@
    <wave_state>
    </wave_state>
    <db_ref_list>
-      <db_ref path="tb_behav.wdb" id="1">
+      <db_ref path="tb_time_synth.wdb" id="1">
          <top_modules>
-            <top_module name="\$unit_Alu_sv " />
             <top_module name="glbl" />
             <top_module name="tb" />
          </top_modules>
       </db_ref>
    </db_ref_list>
    <zoom_setting>
-      <ZoomStartTime time="827000fs"></ZoomStartTime>
-      <ZoomEndTime time="1032001fs"></ZoomEndTime>
-      <Cursor1Time time="930000fs"></Cursor1Time>
+      <ZoomStartTime time="2489352fs"></ZoomStartTime>
+      <ZoomEndTime time="3484314fs"></ZoomEndTime>
+      <Cursor1Time time="3238528fs"></Cursor1Time>
    </zoom_setting>
    <column_width_setting>
       <NameColumnWidth column_width="147"></NameColumnWidth>
-      <ValueColumnWidth column_width="83"></ValueColumnWidth>
+      <ValueColumnWidth column_width="79"></ValueColumnWidth>
    </column_width_setting>
    <WVObjectSize size="24" />
    <wvobject type="logic" fp_name="/tb/clk_50M">
@@ -61,6 +60,10 @@
       <obj_property name="ElementShortName">__alu_out[31:0]</obj_property>
       <obj_property name="ObjectShortName">__alu_out[31:0]</obj_property>
    </wvobject>
+   <wvobject type="logic" fp_name="/tb/dut/__inst_lock">
+      <obj_property name="ElementShortName">__inst_lock</obj_property>
+      <obj_property name="ObjectShortName">__inst_lock</obj_property>
+   </wvobject>
    <wvobject type="logic" fp_name="/tb/dut/__ram_addr_PC">
       <obj_property name="ElementShortName">__ram_addr_PC</obj_property>
       <obj_property name="ObjectShortName">__ram_addr_PC</obj_property>
@@ -97,13 +100,9 @@
       <obj_property name="ElementShortName">__uart_write</obj_property>
       <obj_property name="ObjectShortName">__uart_write</obj_property>
    </wvobject>
-   <wvobject type="logic" fp_name="/tb/dut/__stall">
-      <obj_property name="ElementShortName">__stall</obj_property>
-      <obj_property name="ObjectShortName">__stall</obj_property>
-   </wvobject>
-   <wvobject type="logic" fp_name="/tb/dut/__inst_lock">
-      <obj_property name="ElementShortName">__inst_lock</obj_property>
-      <obj_property name="ObjectShortName">__inst_lock</obj_property>
+   <wvobject type="array" fp_name="/tb/dut/__stall">
+      <obj_property name="ElementShortName">__stall[1:0]</obj_property>
+      <obj_property name="ObjectShortName">__stall[1:0]</obj_property>
    </wvobject>
    <wvobject type="array" fp_name="/tb/dut/__instruction_type">
       <obj_property name="ElementShortName">__instruction_type[3:0]</obj_property>
