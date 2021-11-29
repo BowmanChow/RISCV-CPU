@@ -100,7 +100,7 @@ module thinpad_top(
     output INSTRUCTION_TYPE __instruction_type,
 	output WRITE_BACK_CONTROL __write_back_ctrl,
 	output READ_WRITE_CONTROL __rw_control,
-	output wire [31:0] __registers [0:31],
+	output wire [1023:0] __registers,
 `endif
 
     //图像输出信号
@@ -140,25 +140,25 @@ assign __branch_jump_control_PC_select = branch_jump_control.PC_select;
 assign __instruction_type = instruction_type.type_;
 assign __write_back_ctrl = write_back_ctrl.ctrl;
 assign __rw_control = rw_control.rw;
-assign __registers = reg_file.registers;
+assign __registers = {
+    reg_file.regs[31],reg_file.regs[30],reg_file.regs[29],reg_file.regs[28],reg_file.regs[27],reg_file.regs[26],
+    reg_file.regs[25],reg_file.regs[24],reg_file.regs[23],reg_file.regs[22],reg_file.regs[21],reg_file.regs[20],
+    reg_file.regs[19],reg_file.regs[18],reg_file.regs[17],reg_file.regs[16],reg_file.regs[15],reg_file.regs[14],
+    reg_file.regs[13],reg_file.regs[12],reg_file.regs[11],reg_file.regs[10],reg_file.regs[9], reg_file.regs[8],
+    reg_file.regs[7], reg_file.regs[6], reg_file.regs[5], reg_file.regs[4], reg_file.regs[3], reg_file.regs[2],
+    reg_file.regs[1], reg_file.regs[0]
+};
 `endif
 
 
 /* =========== Demo code begin =========== */
 
-reg clk_12_5M;
-reg counter;
-always @(posedge clk_50M or posedge reset_btn) begin
-    if (reset_btn) begin
-        counter <= 0;
-        clk_12_5M <= 0;
-    end
-    else begin
+reg clk_12_5M = 0;
+reg counter = 0;
+always @(posedge clk_50M) begin
         counter <= counter + 1;
         if (counter == 0)
             clk_12_5M <= ~clk_12_5M;
-    end
-    
 end
 
 
@@ -176,15 +176,13 @@ assign PC_plus_4 = PC + 4;
 reg read = 1;
 reg write = 0;
 logic [31:0] instruction;
-reg [31:0] instruction_reg;
 reg inst_lock = 0;
-always @(posedge inst_lock)
-    instruction_reg <= instruction;
-always_comb
-    instruction <= inst_lock ? instruction_reg : ram.data_read;
+always_latch
+    if (!inst_lock)
+        instruction = ram.data_read;
 reg ram_addr_PC = 1;
 reg stall = 0;
-always @(posedge clk_12_5M or posedge reset_btn) begin
+always_ff @(posedge clk_12_5M or posedge reset_btn) begin
     if (reset_btn) begin
         PC <= 32'h80000000;
     end

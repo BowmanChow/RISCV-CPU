@@ -10,22 +10,22 @@ module RegFile(
     input wire[4:0]     b_addr,
     output wire[31:0]    b_data,
 
-    output reg[31:0] registers[0:31]
+    output reg[31:0] regs[0:31]
     );
 
 always @(posedge clk or posedge rst) begin
     if (rst) begin
         integer i = 0;
         for (i = 0; i < 32; i=i+1) begin
-            registers[i] <= 32'h00000000;
+            regs[i] <= 32'h00000000;
         end
     end
     else if (we && (write_addr != 0)) begin
-        registers[write_addr] <= write_data;
+        regs[write_addr] <= write_data;
     end
 end
 
-assign a_data = registers[a_addr];
-assign b_data = registers[b_addr];
+assign a_data = regs[a_addr];
+assign b_data = regs[b_addr];
 
 endmodule

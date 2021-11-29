@@ -72,7 +72,7 @@ initial begin
 end
 
 // 待测试用户设计
-wire [31:0] __registers [0:31];
+wire [31:0] __regs [0:31];
 // assign __registers = dut.__registers;
 thinpad_top dut(
     .clk_50M(clk_50M),
@@ -110,8 +110,15 @@ thinpad_top dut(
     .flash_oe_n(flash_oe_n),
     .flash_ce_n(flash_ce_n),
     .flash_byte_n(flash_byte_n),
-    .flash_we_n(flash_we_n)
-    // .__registers(__registers)
+    .flash_we_n(flash_we_n),
+    .__registers({
+    __regs[31],__regs[30],__regs[29],__regs[28],__regs[27],__regs[26],
+    __regs[25],__regs[24],__regs[23],__regs[22],__regs[21],__regs[20],
+    __regs[19],__regs[18],__regs[17],__regs[16],__regs[15],__regs[14],
+    __regs[13],__regs[12],__regs[11],__regs[10],__regs[9], __regs[8],
+    __regs[7], __regs[6], __regs[5], __regs[4], __regs[3], __regs[2],
+    __regs[1], __regs[0]
+})
 );
 // 时钟源
 clock osc(
