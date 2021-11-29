@@ -71,7 +71,7 @@ module thinpad_top(
     output wire dm9k_pwrst_n,
     input  wire dm9k_int,
 
-`define debug
+// `define debug
 `ifdef debug
 	output wire [31:0] __PC,
 	output wire [31:0] __PC_plus_4,
