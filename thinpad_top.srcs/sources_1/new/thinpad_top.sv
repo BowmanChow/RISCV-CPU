@@ -160,10 +160,16 @@ assign __registers = {
 reg clk_12_5M = 0;
 reg counter = 0;
 always @(posedge clk_50M) begin
-        counter <= counter + 1;
-        if (counter == 0)
-            clk_12_5M <= ~clk_12_5M;
+    counter <= counter + 1;
+    if (counter == 0)
+        clk_12_5M <= ~clk_12_5M;
 end
+reg clk_25M = 0;
+always @(posedge clk_50M) begin
+    clk_25M <= ~clk_25M;
+end
+wire clk_cpu;
+assign clk_cpu = clk_25M;
 
 
 wire [7:0] uart_status;
@@ -185,7 +191,7 @@ always_latch
         instruction = ram.data_read;
 reg ram_addr_PC = 1;
 reg [1:0] stall = 2'b00;
-always_ff @(posedge clk_50M or posedge reset_btn) begin
+always_ff @(posedge clk_cpu or posedge reset_btn) begin
     if (reset_btn) begin
         PC <= 32'h80000000;
     end
@@ -196,7 +202,7 @@ always_ff @(posedge clk_50M or posedge reset_btn) begin
             PC <= (branch_jump_control.PC_select == PC_ALU) ? alu.out : PC_plus_4;
     end
 end
-always_ff @(posedge clk_50M or posedge reset_btn) begin
+always_ff @(posedge clk_cpu or posedge reset_btn) begin
     if (reset_btn) begin
 		ram_addr_PC <= 1;
 		read <= 1;
@@ -208,7 +214,7 @@ always_ff @(posedge clk_50M or posedge reset_btn) begin
         ram_addr_PC <= (stall == 0) ? 1 : 0;
     end
 end
-always_ff @(negedge clk_50M or posedge reset_btn) begin
+always_ff @(negedge clk_cpu or posedge reset_btn) begin
     if (reset_btn) begin
 		write <= 0;
         uart_read <= 0;
@@ -236,11 +242,11 @@ always_ff @(negedge clk_50M or posedge reset_btn) begin
         end
     end
 end
-always_ff @(posedge clk_50M or posedge reset_btn or negedge clk_50M) begin
+always_ff @(posedge clk_cpu or posedge reset_btn or negedge clk_cpu) begin
     if (reset_btn) begin
         inst_lock <= 0;
     end
-    else if (clk_50M) begin
+    else if (clk_cpu) begin
         if (stall != 0) begin
             inst_lock <= 1;
         end
@@ -296,7 +302,7 @@ ImmeGen imme_gen(
     .inst_type(instruction_type.type_)
 );
 RegFile reg_file(
-    .clk(clk_50M),
+    .clk(clk_cpu),
     .rst(reset_btn),
     .write_addr(instruction[11:7]),
     .write_data(
