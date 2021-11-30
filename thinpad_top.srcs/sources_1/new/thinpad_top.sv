@@ -185,7 +185,7 @@ always_latch
         instruction = ram.data_read;
 reg ram_addr_PC = 1;
 reg [1:0] stall = 2'b00;
-always_ff @(posedge clk_12_5M or posedge reset_btn) begin
+always_ff @(posedge clk_50M or posedge reset_btn) begin
     if (reset_btn) begin
         PC <= 32'h80000000;
     end
@@ -196,7 +196,7 @@ always_ff @(posedge clk_12_5M or posedge reset_btn) begin
             PC <= (branch_jump_control.PC_select == PC_ALU) ? alu.out : PC_plus_4;
     end
 end
-always_ff @(posedge clk_12_5M or posedge reset_btn) begin
+always_ff @(posedge clk_50M or posedge reset_btn) begin
     if (reset_btn) begin
 		ram_addr_PC <= 1;
 		read <= 1;
@@ -208,7 +208,7 @@ always_ff @(posedge clk_12_5M or posedge reset_btn) begin
         ram_addr_PC <= (stall == 0) ? 1 : 0;
     end
 end
-always_ff @(negedge clk_12_5M or posedge reset_btn) begin
+always_ff @(negedge clk_50M or posedge reset_btn) begin
     if (reset_btn) begin
 		write <= 0;
         uart_read <= 0;
@@ -236,11 +236,11 @@ always_ff @(negedge clk_12_5M or posedge reset_btn) begin
         end
     end
 end
-always_ff @(posedge clk_12_5M or posedge reset_btn or negedge clk_12_5M) begin
+always_ff @(posedge clk_50M or posedge reset_btn or negedge clk_50M) begin
     if (reset_btn) begin
         inst_lock <= 0;
     end
-    else if (clk_12_5M) begin
+    else if (clk_50M) begin
         if (stall != 0) begin
             inst_lock <= 1;
         end
@@ -296,7 +296,7 @@ ImmeGen imme_gen(
     .inst_type(instruction_type.type_)
 );
 RegFile reg_file(
-    .clk(clk_12_5M),
+    .clk(clk_50M),
     .rst(reset_btn),
     .write_addr(instruction[11:7]),
     .write_data(
